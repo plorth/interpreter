@@ -107,11 +107,6 @@ namespace plorth
   bool unicode_islower(char32_t);
 
   /**
-   * Determines whether a character can be part of Plorth word.
-   */
-  bool unicode_isword(char32_t);
-
-  /**
    * Converts given Unicode character into upper case.
    */
   char32_t unicode_toupper(char32_t);

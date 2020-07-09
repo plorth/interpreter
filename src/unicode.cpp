@@ -817,12 +817,6 @@ namespace plorth
     return false;
   }
 
-  bool unicode_isword(char32_t c)
-  {
-    return c != '(' && c != ')' && c != '[' && c != ']' && c != '{'
-      && c != '}' && c != ':' && c != ';' && c != ',' && unicode_isgraph(c);
-  }
-
   char32_t unicode_tolower(char32_t cp)
   {
     if (cp >= 'A' && cp <= 'Z')

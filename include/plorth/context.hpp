@@ -89,9 +89,12 @@ namespace plorth
      * \param position Optional position in the source code where the error
      *                 occurred
      */
-    void error(enum error::code code,
-               const std::u32string& message,
-               const struct position* position = nullptr);
+    void error(
+      enum error::code code,
+      const std::u32string& message,
+      const std::optional<parser::position>& position =
+        std::optional<parser::position>()
+    );
 
     /**
      * Removes currently uncaught error in the context.
@@ -411,7 +414,7 @@ namespace plorth
      * Returns reference to a structure which has information about current
      * position in source code.
      */
-    inline struct position& position()
+    inline struct parser::position& position()
     {
       return m_position;
     }
@@ -420,7 +423,7 @@ namespace plorth
      * Returns reference to a structure which has information about current
      * position in source code.
      */
-    inline const struct position& position() const
+    inline const struct parser::position& position() const
     {
       return m_position;
     }
@@ -447,7 +450,7 @@ namespace plorth
     std::u32string m_filename;
 #endif
     /** Current position in source code. */
-    struct position m_position;
+    struct parser::position m_position;
   };
 }
 

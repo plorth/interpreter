@@ -86,8 +86,6 @@ ADD_LIBRARY(
   src/io-output.cpp
   src/memory.cpp
   src/module.cpp
-  src/parser.cpp
-  src/position.cpp
   src/runtime.cpp
   src/unicode.cpp
   src/utils.cpp

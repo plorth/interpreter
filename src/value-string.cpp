@@ -24,7 +24,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 #include <plorth/context.hpp>
-#include <plorth/unicode.hpp>
+#include <plorth/parser/utils.hpp>
 
 #include "./utils.hpp"
 
@@ -1285,7 +1285,7 @@ namespace plorth
       }
       for (string::size_type i = 0; i < length; ++i)
       {
-        if (!unicode_isword(str->at(i)))
+        if (!parser::utils::isword(str->at(i)))
         {
           ctx->error(
             error::code::value,

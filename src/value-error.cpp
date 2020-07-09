@@ -29,18 +29,10 @@ namespace plorth
 {
   error::error(enum code code,
                const std::u32string& message,
-               const struct position* position)
+               const std::optional<parser::position>& position)
     : m_code(code)
     , m_message(message)
-    , m_position(position ? new struct position(*position) : nullptr) {}
-
-  error::~error()
-  {
-    if (m_position)
-    {
-      delete m_position;
-    }
-  }
+    , m_position(position) {}
 
   std::u32string error::code_description() const
   {
@@ -207,7 +199,7 @@ namespace plorth
         const auto& runtime = ctx->runtime();
 
         ctx->push_object({
-          { U"filename", runtime->string(position->filename) },
+          { U"filename", runtime->string(position->file) },
           { U"line", runtime->number(number::int_type(position->line)) },
           { U"column", runtime->number(number::int_type(position->column)) }
         });

@@ -44,13 +44,15 @@ namespace plorth
 
   void context::error(enum error::code code,
                       const std::u32string& message,
-                      const struct position* position)
+                      const std::optional<parser::position>& position)
   {
-    if (!position && (m_position.filename.empty() || m_position.line > 0))
-    {
-      position = &m_position;
-    }
-    m_error = m_runtime->value<class error>(code, message, position);
+    m_error = m_runtime->value<class error>(
+      code,
+      message,
+      !position && (m_position.file.empty() || m_position.line > 0)
+        ? m_position
+        : position
+    );
   }
 
   void context::push_null()

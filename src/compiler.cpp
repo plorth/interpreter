@@ -30,7 +30,7 @@ namespace plorth
 {
   static std::shared_ptr<value> compile_token(
     const std::shared_ptr<runtime>&,
-    const std::shared_ptr<token>&
+    const std::shared_ptr<parser::ast::token>&
   );
 
   std::shared_ptr<quote> context::compile(const std::u32string& source,
@@ -38,24 +38,26 @@ namespace plorth
                                           int line,
                                           int column)
   {
-    class parser parser(source, filename, line, column);
-    std::vector<std::shared_ptr<token>> result;
+    auto begin = std::begin(source);
+    const auto end = std::end(source);
+    parser::position position = { filename, line, column };
+    const auto result = parser::parse(begin, end, position);
     std::vector<std::shared_ptr<value>> values;
 
-    if (!parser.parse(result))
+    if (!result)
     {
-      auto error_message = parser.error();
+      auto error_message = result.error()->message;
 
       if (error_message.empty())
       {
         error_message = U"Unknown error.";
       }
-      error(error::code::syntax, error_message, &parser.position());
+      error(error::code::syntax, error_message, result.error()->position);
 
       return std::shared_ptr<quote>();
     }
-    values.reserve(result.size());
-    for (const auto& token : result)
+    values.reserve(result.value()->size());
+    for (const auto& token : *result.value())
     {
       values.push_back(compile_token(m_runtime, token));
     }
@@ -65,7 +67,7 @@ namespace plorth
 
   static std::shared_ptr<array> compile_array_token(
     const std::shared_ptr<class runtime>& runtime,
-    const std::shared_ptr<token::array>& token
+    const std::shared_ptr<parser::ast::array>& token
   )
   {
     const auto& elements = token->elements();
@@ -82,7 +84,7 @@ namespace plorth
 
   static std::shared_ptr<object> compile_object_token(
     const std::shared_ptr<class runtime>& runtime,
-    const std::shared_ptr<token::object>& token
+    const std::shared_ptr<parser::ast::object>& token
   )
   {
     const auto& properties = token->properties();
@@ -105,7 +107,7 @@ namespace plorth
 
   static std::shared_ptr<quote> compile_quote_token(
     const std::shared_ptr<class runtime>& runtime,
-    const std::shared_ptr<token::quote>& token
+    const std::shared_ptr<parser::ast::quote>& token
   )
   {
     const auto& children = token->children();
@@ -123,7 +125,7 @@ namespace plorth
 
   static std::shared_ptr<string> compile_string_token(
     const std::shared_ptr<class runtime>& runtime,
-    const std::shared_ptr<token::string>& token
+    const std::shared_ptr<parser::ast::string>& token
   )
   {
     return runtime->string(token->value());
@@ -131,15 +133,15 @@ namespace plorth
 
   static std::shared_ptr<symbol> compile_symbol_token(
     const std::shared_ptr<class runtime>& runtime,
-    const std::shared_ptr<token::symbol>& token
+    const std::shared_ptr<parser::ast::symbol>& token
   )
   {
-    return runtime->symbol(token->id(), &token->position());
+    return runtime->symbol(token->id(), token->position());
   }
 
   static std::shared_ptr<word> compile_word_token(
     const std::shared_ptr<class runtime>& runtime,
-    const std::shared_ptr<token::word>& token
+    const std::shared_ptr<parser::ast::word>& token
   )
   {
     return runtime->word(
@@ -150,7 +152,7 @@ namespace plorth
 
   static std::shared_ptr<value> compile_token(
     const std::shared_ptr<class runtime>& runtime,
-    const std::shared_ptr<token>& token
+    const std::shared_ptr<parser::ast::token>& token
   )
   {
     if (!token)
@@ -159,40 +161,40 @@ namespace plorth
     }
     switch (token->type())
     {
-      case token::type::array:
+      case parser::ast::token::type::array:
         return compile_array_token(
           runtime,
-          std::static_pointer_cast<token::array>(token)
+          std::static_pointer_cast<parser::ast::array>(token)
         );
 
-      case token::type::object:
+      case parser::ast::token::type::object:
         return compile_object_token(
           runtime,
-          std::static_pointer_cast<token::object>(token)
+          std::static_pointer_cast<parser::ast::object>(token)
         );
 
-      case token::type::quote:
+      case parser::ast::token::type::quote:
         return compile_quote_token(
           runtime,
-          std::static_pointer_cast<token::quote>(token)
+          std::static_pointer_cast<parser::ast::quote>(token)
         );
 
-      case token::type::string:
+      case parser::ast::token::type::string:
         return compile_string_token(
           runtime,
-          std::static_pointer_cast<token::string>(token)
+          std::static_pointer_cast<parser::ast::string>(token)
         );
 
-      case token::type::symbol:
+      case parser::ast::token::type::symbol:
         return compile_symbol_token(
           runtime,
-          std::static_pointer_cast<token::symbol>(token)
+          std::static_pointer_cast<parser::ast::symbol>(token)
         );
 
-      case token::type::word:
+      case parser::ast::token::type::word:
         return compile_word_token(
           runtime,
-          std::static_pointer_cast<token::word>(token)
+          std::static_pointer_cast<parser::ast::word>(token)
         );
     }
 
