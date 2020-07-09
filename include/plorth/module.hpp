@@ -23,8 +23,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-#ifndef PLORTH_MODULE_HPP_GUARD
-#define PLORTH_MODULE_HPP_GUARD
+#pragma once
 
 #include <plorth/value-object.hpp>
 
@@ -82,5 +81,3 @@ namespace plorth
     };
   }
 }
-
-#endif /* !PLORTH_MODULE_HPP_GUARD */

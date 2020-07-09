@@ -23,8 +23,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-#ifndef PLORTH_VALUE_WORD_HPP_GUARD
-#define PLORTH_VALUE_WORD_HPP_GUARD
+#pragma once
 
 #include <plorth/value-quote.hpp>
 #include <plorth/value-symbol.hpp>
@@ -78,5 +77,3 @@ namespace plorth
     const std::shared_ptr<class quote> m_quote;
   };
 }
-
-#endif /* !PLORTH_VALUE_WORD_HPP_GUARD */

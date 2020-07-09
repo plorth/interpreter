@@ -23,8 +23,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-#ifndef PLORTH_UNICODE_HPP_GUARD
-#define PLORTH_UNICODE_HPP_GUARD
+#pragma once
 
 #include <plorth/config.hpp>
 
@@ -45,5 +44,3 @@ namespace plorth
   std::wstring utf32le_encode(const std::u32string&);
 }
 #endif
-
-#endif /* !PLORTH_UNICODE_HPP_GUARD */

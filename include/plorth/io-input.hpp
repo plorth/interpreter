@@ -23,8 +23,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-#ifndef PLORTH_IO_INPUT_HPP_GUARD
-#define PLORTH_IO_INPUT_HPP_GUARD
+#pragma once
 
 #include <plorth/memory.hpp>
 #include <plorth/unicode.hpp>
@@ -85,5 +84,3 @@ namespace plorth
     };
   }
 }
-
-#endif /* !PLORTH_IO_INPUT_HPP_GUARD */

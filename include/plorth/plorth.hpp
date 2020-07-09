@@ -23,8 +23,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-#ifndef PLORTH_PLORTH_HPP_GUARD
-#define PLORTH_PLORTH_HPP_GUARD
+#pragma once
 
 #include <plorth/config.hpp>
 
@@ -40,5 +39,3 @@
 
 #include <plorth/runtime.hpp>
 #include <plorth/context.hpp>
-
-#endif /* !PLORTH_PLORTH_HPP_GUARD */

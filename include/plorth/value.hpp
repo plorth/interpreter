@@ -23,8 +23,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-#ifndef PLORTH_VALUE_HPP_GUARD
-#define PLORTH_VALUE_HPP_GUARD
+#pragma once
 
 #include <plorth/memory.hpp>
 #include <plorth/unicode.hpp>
@@ -161,5 +160,3 @@ namespace plorth
   std::ostream& operator<<(std::ostream&, enum value::type);
   std::ostream& operator<<(std::ostream&, const value*);
 }
-
-#endif /* !PLORTH_VALUE_HPP_GUARD */

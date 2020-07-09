@@ -23,8 +23,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-#ifndef PLORTH_CONTEXT_HPP_GUARD
-#define PLORTH_CONTEXT_HPP_GUARD
+#pragma once
 
 #include <plorth/runtime.hpp>
 #include <plorth/value-error.hpp>
@@ -453,5 +452,3 @@ namespace plorth
     struct parser::position m_position;
   };
 }
-
-#endif /* !PLORTH_CONTEXT_HPP_GUARD */

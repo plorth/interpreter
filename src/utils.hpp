@@ -23,8 +23,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-#ifndef PLORTH_UTILS_HPP_GUARD
-#define PLORTH_UTILS_HPP_GUARD
+#pragma once
 
 #include <plorth/value-number.hpp>
 
@@ -37,5 +36,3 @@ namespace plorth
   std::u32string to_unistring(number::int_type);
   std::u32string to_unistring(number::real_type);
 }
-
-#endif /* !PLORTH_UTILS_HPP_GUARD */

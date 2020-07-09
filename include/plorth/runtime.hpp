@@ -23,8 +23,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-#ifndef PLORTH_RUNTIME_HPP_GUARD
-#define PLORTH_RUNTIME_HPP_GUARD
+#pragma once
 
 #include <plorth/dictionary.hpp>
 #include <plorth/io-input.hpp>
@@ -483,5 +482,3 @@ namespace plorth
 #endif
   };
 }
-
-#endif /* !PLORTH_RUNTIME_HPP_GUARD */

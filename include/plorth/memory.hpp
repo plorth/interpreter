@@ -23,8 +23,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-#ifndef PLORTH_MEMORY_HPP_GUARD
-#define PLORTH_MEMORY_HPP_GUARD
+#pragma once
 
 #include <plorth/config.hpp>
 
@@ -151,5 +150,3 @@ namespace plorth
 #endif
   }
 }
-
-#endif /* !PLORTH_MEMORY_HPP_GUARD */

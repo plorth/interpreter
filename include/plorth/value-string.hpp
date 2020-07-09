@@ -23,8 +23,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-#ifndef PLORTH_VALUE_STRING_HPP_GUARD
-#define PLORTH_VALUE_STRING_HPP_GUARD
+#pragma once
 
 #include <iterator>
 
@@ -109,5 +108,3 @@ namespace plorth
     return string::iterator(str, str->length());
   }
 }
-
-#endif /* !PLORTH_VALUE_STRING_HPP_GUARD */

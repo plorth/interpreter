@@ -23,8 +23,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-#ifndef PLORTH_VALUE_QUOTE_HPP_GUARD
-#define PLORTH_VALUE_QUOTE_HPP_GUARD
+#pragma once
 
 #include <plorth/value.hpp>
 
@@ -81,5 +80,3 @@ namespace plorth
     std::u32string to_source() const;
   };
 }
-
-#endif /* !PLORTH_VALUE_QUOTE_HPP_GUARD */

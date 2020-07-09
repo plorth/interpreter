@@ -23,8 +23,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-#ifndef PLORTH_VALUE_SYMBOL_HPP_GUARD
-#define PLORTH_VALUE_SYMBOL_HPP_GUARD
+#pragma once
 
 #include <optional>
 
@@ -135,5 +134,3 @@ namespace std
     }
   };
 }
-
-#endif /* !PLORTH_VALUE_SYMBOL_HPP_GUARD */

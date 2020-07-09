@@ -23,8 +23,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-#ifndef PLORTH_DICTIONARY_HPP
-#define PLORTH_DICTIONARY_HPP
+#pragma once
 
 #include <plorth/value-word.hpp>
 
@@ -98,5 +97,3 @@ namespace plorth
     container_type m_words;
   };
 }
-
-#endif /* !PLORTH_DICTIONARY_HPP */
