@@ -25,6 +25,8 @@
  */
 #include <plorth/io-output.hpp>
 
+#include <peelo/unicode/encoding/utf8.hpp>
+
 namespace plorth
 {
   namespace
@@ -41,7 +43,7 @@ namespace plorth
     public:
       void write(const std::u32string& str)
       {
-        const auto bytes = utf8_encode(str);
+        const auto bytes = peelo::unicode::encoding::utf8::encode(str);
 
         std::fwrite(
           static_cast<const void*>(bytes.c_str()),

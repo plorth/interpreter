@@ -25,6 +25,8 @@
  */
 #include <plorth/context.hpp>
 
+#include <peelo/unicode/encoding/utf8.hpp>
+
 namespace plorth
 {
   std::u32string value::type_description() const
@@ -139,7 +141,9 @@ namespace plorth
 
   std::ostream& operator<<(std::ostream& out, enum value::type type)
   {
-    out << utf8_encode(value::type_description(type));
+    out << peelo::unicode::encoding::utf8::encode(
+      value::type_description(type)
+    );
 
     return out;
   }
@@ -148,7 +152,7 @@ namespace plorth
   {
     if (value)
     {
-      os << utf8_encode(value->to_string());
+      os << peelo::unicode::encoding::utf8::encode(value->to_string());
     } else {
       os << "<no value>";
     }

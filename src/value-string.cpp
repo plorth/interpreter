@@ -28,6 +28,12 @@
 
 #include "./utils.hpp"
 
+#include <peelo/unicode/ctype/islower.hpp>
+#include <peelo/unicode/ctype/isspace.hpp>
+#include <peelo/unicode/ctype/isupper.hpp>
+#include <peelo/unicode/ctype/tolower.hpp>
+#include <peelo/unicode/ctype/toupper.hpp>
+
 #include <algorithm>
 #include <cstring>
 
@@ -640,7 +646,7 @@ namespace plorth
    */
   static void w_is_space(const std::shared_ptr<context>& ctx)
   {
-    str_test(ctx, unicode_isspace);
+    str_test(ctx, peelo::unicode::ctype::isspace);
   }
 
   /**
@@ -659,7 +665,7 @@ namespace plorth
    */
   static void w_is_lower_case(const std::shared_ptr<context>& ctx)
   {
-    str_test(ctx, unicode_islower);
+    str_test(ctx, peelo::unicode::ctype::islower);
   }
 
   /**
@@ -678,7 +684,7 @@ namespace plorth
    */
   static void w_is_upper_case(const std::shared_ptr<context>& ctx)
   {
-    str_test(ctx, unicode_isupper);
+    str_test(ctx, peelo::unicode::ctype::isupper);
   }
 
   /**
@@ -777,7 +783,7 @@ namespace plorth
 
       for (string::size_type i = 0; i < length; ++i)
       {
-        if (unicode_isspace(str->at(i)))
+        if (peelo::unicode::ctype::isspace(str->at(i)))
         {
           if (end - begin > 0)
           {
@@ -904,7 +910,7 @@ namespace plorth
    */
   static void w_upper_case(const std::shared_ptr<context>& ctx)
   {
-    str_convert(ctx, unicode_toupper);
+    str_convert(ctx, peelo::unicode::ctype::toupper);
   }
 
   /**
@@ -921,16 +927,16 @@ namespace plorth
    */
   static void w_lower_case(const std::shared_ptr<context>& ctx)
   {
-    str_convert(ctx, unicode_tolower);
+    str_convert(ctx, peelo::unicode::ctype::tolower);
   }
 
   static inline char32_t unicode_swapcase(char32_t c)
   {
-    if (unicode_islower(c))
+    if (peelo::unicode::ctype::islower(c))
     {
-      return unicode_toupper(c);
+      return peelo::unicode::ctype::toupper(c);
     } else {
-      return unicode_tolower(c);
+      return peelo::unicode::ctype::tolower(c);
     }
   }
 
@@ -979,9 +985,9 @@ namespace plorth
 
         if (i == 0)
         {
-          c = unicode_toupper(c);
+          c = peelo::unicode::ctype::toupper(c);
         } else {
-          c = unicode_tolower(c);
+          c = peelo::unicode::ctype::tolower(c);
         }
         output[i] = c;
       }
@@ -1012,14 +1018,14 @@ namespace plorth
 
       for (i = 0; i < length; ++i)
       {
-        if (!unicode_isspace(str->at(i)))
+        if (!peelo::unicode::ctype::isspace(str->at(i)))
         {
           break;
         }
       }
       for (j = length; j != 0; --j)
       {
-        if (!unicode_isspace(str->at(j - 1)))
+        if (!peelo::unicode::ctype::isspace(str->at(j - 1)))
         {
           break;
         }
@@ -1056,7 +1062,7 @@ namespace plorth
 
       for (i = 0; i < length; ++i)
       {
-        if (!unicode_isspace(str->at(i)))
+        if (!peelo::unicode::ctype::isspace(str->at(i)))
         {
           break;
         }
@@ -1093,7 +1099,7 @@ namespace plorth
 
       for (i = length; i != 0; --i)
       {
-        if (!unicode_isspace(str->at(i - 1)))
+        if (!peelo::unicode::ctype::isspace(str->at(i - 1)))
         {
           break;
         }

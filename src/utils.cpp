@@ -27,6 +27,9 @@
 
 #include "./utils.hpp"
 
+#include <peelo/unicode/ctype/iscntrl.hpp>
+#include <peelo/unicode/encoding/utf8.hpp>
+
 #include <cfloat>
 #include <climits>
 #include <cmath>
@@ -88,7 +91,7 @@ namespace plorth
           break;
 
         default:
-          if (unicode_iscntrl(c))
+          if (peelo::unicode::ctype::iscntrl(c))
           {
             char buffer[7];
 
@@ -207,7 +210,7 @@ namespace plorth
     }
     std::snprintf(buffer, sizeof(buffer), "%g", number);
 
-    return utf8_decode(buffer);
+    return peelo::unicode::encoding::utf8::decode(buffer);
   }
 
   number::int_type to_integer(const std::u32string& input)

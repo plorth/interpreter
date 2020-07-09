@@ -26,6 +26,8 @@
 #include <plorth/context.hpp>
 #include <plorth/module.hpp>
 #if PLORTH_ENABLE_FILE_SYSTEM_MODULES
+# include <peelo/unicode/ctype/isspace.hpp>
+# include <peelo/unicode/encoding/utf8.hpp>
 # include <climits>
 # include <fstream>
 # if HAVE_SYS_TYPES_H
@@ -61,7 +63,11 @@ namespace plorth
     }
 
     // Do not attempt to import empty paths.
-    if (path.empty() || std::all_of(path.begin(), path.end(), unicode_isspace))
+    if (path.empty() || std::all_of(
+      path.begin(),
+      path.end(),
+      peelo::unicode::ctype::isspace
+    ))
     {
       context->error(error::code::import, U"Empty import path.");
 
@@ -132,7 +138,9 @@ namespace plorth
           const std::u32string& module_file_extension
         )
           : m_lookup_paths(lookup_paths)
-          , m_module_file_extension(utf8_encode(module_file_extension)) {}
+          , m_module_file_extension(peelo::unicode::encoding::utf8::encode(
+            module_file_extension
+          )) {}
 
         std::shared_ptr<object> import_module(
           const std::shared_ptr<context>& ctx,
@@ -189,14 +197,16 @@ namespace plorth
                           const std::u32string& path,
                           std::u32string& resolved_path)
         {
-          auto encoded_path = utf8_encode(path);
+          auto encoded_path = peelo::unicode::encoding::utf8::encode(path);
           char buffer[PATH_MAX];
 
           // If the path is absolute, resolve it into full path and use that
           // directly.
           if (is_absolute_path(path))
           {
-            const auto dir = utf8_encode(dirname(ctx->filename()));
+            const auto dir = peelo::unicode::encoding::utf8::encode(
+              dirname(ctx->filename())
+            );
 
             if (!dir.empty())
             {
@@ -223,14 +233,16 @@ namespace plorth
             std::string module_path;
 
             // Skip empty paths.
-            if (directory.empty() || std::all_of(directory.begin(),
-                                                 directory.end(),
-                                                 unicode_isspace))
+            if (directory.empty() || std::all_of(
+              directory.begin(),
+              directory.end(),
+              peelo::unicode::ctype::isspace
+            ))
             {
               continue;
             }
 
-            module_path = utf8_encode(directory);
+            module_path = peelo::unicode::encoding::utf8::encode(directory);
             if (module_path.back() != file_separator)
             {
               module_path += file_separator;
@@ -316,7 +328,9 @@ namespace plorth
             if (::stat(index_file_path.c_str(), &st) >= 0
                 && S_ISREG(st.st_mode))
             {
-              resolved_path = utf8_decode(index_file_path);
+              resolved_path = peelo::unicode::encoding::utf8::decode(
+                index_file_path
+              );
 
               return true;
             }
@@ -324,7 +338,7 @@ namespace plorth
           // Is it ordinary file? Then use that one.
           else if (S_ISREG(st.st_mode))
           {
-            resolved_path = utf8_decode(path);
+            resolved_path = peelo::unicode::encoding::utf8::decode(path);
 
             return true;
           }
@@ -351,7 +365,7 @@ namespace plorth
           const std::u32string& path
         )
         {
-          std::ifstream is(utf8_encode(path));
+          std::ifstream is(peelo::unicode::encoding::utf8::encode(path));
           std::string raw_source;
           std::u32string source;
           std::shared_ptr<quote> compiled_module;
@@ -376,7 +390,10 @@ namespace plorth
           is.close();
 
           // First decode the source code with UTF-8 character encoding.
-          if (!utf8_decode_test(raw_source, source))
+          if (!peelo::unicode::encoding::utf8::decode_validate(
+            raw_source,
+            source
+          ))
           {
             ctx->error(
               error::code::import,

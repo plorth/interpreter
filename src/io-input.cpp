@@ -25,6 +25,10 @@
  */
 #include <plorth/io-input.hpp>
 
+#include <peelo/unicode/encoding/utf8.hpp>
+
+#include <iostream>
+
 namespace plorth
 {
   namespace
@@ -50,7 +54,11 @@ namespace plorth
           {
             return result::eof;
           }
-          else if (!(unicode_size = utf8_sequence_length(byte)))
+          else if (!(
+            unicode_size = peelo::unicode::encoding::utf8::sequence_length(
+              byte
+            )
+          ))
           {
             return result::failure;
           }
@@ -64,7 +72,7 @@ namespace plorth
             }
             buffer.append(1, byte);
           }
-          if (!utf8_decode_test(buffer, output))
+          if (!peelo::unicode::encoding::utf8::decode_validate(buffer, output))
           {
             return result::failure;
           }

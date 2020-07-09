@@ -25,6 +25,8 @@
  */
 #include <plorth/context.hpp>
 
+#include <peelo/unicode/encoding/utf8.hpp>
+
 namespace plorth
 {
   error::error(enum code code,
@@ -105,7 +107,9 @@ namespace plorth
 
   std::ostream& operator<<(std::ostream& out, enum error::code code)
   {
-    out << utf8_encode(error::code_description(code));
+    out << peelo::unicode::encoding::utf8::encode(
+      error::code_description(code)
+    );
 
     return out;
   }

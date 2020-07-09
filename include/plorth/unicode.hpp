@@ -28,42 +28,11 @@
 
 #include <plorth/config.hpp>
 
-#include <cstdint>
-
-#include <iostream>
 #include <string>
 
+#if defined(__EMSCRIPTEN__)
 namespace plorth
 {
-  /**
-   * Decodes UTF-8 encoded byte string into Unicode string. Encountered encoding
-   * errors are ignored.
-   */
-  std::u32string utf8_decode(const std::string&);
-
-  /**
-   * Decodes UTF-8 encoded byte string into Unicode string with validation.
-   */
-  bool utf8_decode_test(const std::string&, std::u32string&);
-
-  /**
-   * Encodes given Unicode characters into UTF-8 encoded byte string.
-   *
-   * \param ptr Pointer to array of characters to encode.
-   * \param len Size of the array.
-   * \return    Given Unicode characters encoded into UTF-8 byte string.
-   */
-  std::string utf8_encode(const char32_t*, std::size_t);
-
-  /**
-   * Encodes Unicode string into UTF-8 encoded byte string.
-   */
-  inline std::string utf8_encode(const std::u32string& input)
-  {
-    return utf8_encode(input.c_str(), input.length());
-  }
-
-#if defined(__EMSCRIPTEN__)
   /**
    * Decodes UTF-32LE encoded wide character string into Unicode string.
    * Encountered encoding errors are ignored.
@@ -74,55 +43,7 @@ namespace plorth
    * Encodes Unicode string into UTF-32LE encoded wide character string.
    */
   std::wstring utf32le_encode(const std::u32string&);
-#endif
-
-  /**
-   * Determines whether given character is valid Unicode code point.
-   */
-  bool unicode_validate(char32_t);
-
-  /**
-   * Determines whether a character is a control character.
-   */
-  bool unicode_iscntrl(char32_t);
-
-  /**
-   * Determines whether a character is printable and not a space.
-   */
-  bool unicode_isgraph(char32_t);
-
-  /**
-   * Determines whether a character is whitespace.
-   */
-  bool unicode_isspace(char32_t);
-
-  /**
-   * Determines whether a character is upper case.
-   */
-  bool unicode_isupper(char32_t);
-
-  /**
-   * Determines whether a character is lower case.
-   */
-  bool unicode_islower(char32_t);
-
-  /**
-   * Converts given Unicode character into upper case.
-   */
-  char32_t unicode_toupper(char32_t);
-
-  /**
-   * Converts given Unicode character into lower case.
-   */
-  char32_t unicode_tolower(char32_t);
-
-  /**
-   * Attempts to determine length (in bytes) of UTF-8 sequence which begins
-   * with the given byte. If the length cannot be determined (i.e. beginning of
-   * sequence is invalid according to UTF-8 specification), 0 will be returned
-   * instead.
-   */
-  std::size_t utf8_sequence_length(unsigned char);
 }
+#endif
 
 #endif /* !PLORTH_UNICODE_HPP_GUARD */

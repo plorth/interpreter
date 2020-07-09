@@ -25,6 +25,8 @@
  */
 #include <plorth/context.hpp>
 
+#include <peelo/unicode/ctype/isvalid.hpp>
+
 #include <cmath>
 #include <chrono>
 
@@ -1449,7 +1451,7 @@ namespace plorth
     {
       number::int_type c = num->as_int();
 
-      if (!unicode_validate(c))
+      if (!peelo::unicode::ctype::isvalid(c))
       {
         ctx->error(error::code::range, U"Invalid Unicode code point.");
       } else {
