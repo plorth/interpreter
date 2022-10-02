@@ -210,7 +210,7 @@ namespace plorth
         std::vector<mapped_type> result;
 
         result.reserve(m_object->size());
-        for (const auto property : m_object->entries())
+        for (const auto& property : m_object->entries())
         {
           if (property.first == m_key)
           {
@@ -228,7 +228,7 @@ namespace plorth
         std::vector<value_type> result;
 
         result.reserve(m_object->size());
-        for (const auto property : m_object->entries())
+        for (const auto& property : m_object->entries())
         {
           if (property.first == m_key)
           {
@@ -393,7 +393,7 @@ namespace plorth
     std::u32string result;
     bool first = true;
 
-    for (const auto property : entries())
+    for (const auto& property : entries())
     {
       if (first)
       {
@@ -419,7 +419,7 @@ namespace plorth
     bool first = true;
 
     result += '{';
-    for (const auto property : entries())
+    for (const auto& property : entries())
     {
       if (first)
       {
@@ -481,7 +481,7 @@ namespace plorth
     }
 
     result.reserve(obj->size());
-    for (const auto key : obj->keys())
+    for (const auto& key : obj->keys())
     {
       result.push_back(runtime->string(key));
     }
@@ -541,7 +541,7 @@ namespace plorth
       return;
     }
 
-    for (const auto property : obj->entries())
+    for (const auto& property : obj->entries())
     {
       std::shared_ptr<value> pair[2];
 
@@ -787,7 +787,7 @@ namespace plorth
         std::end(entries)
       );
 
-      for (const auto property : a->entries())
+      for (const auto& property : a->entries())
       {
         properties[property.first] = property.second;
       }
