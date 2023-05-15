@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2018, Rauli Laine
+ * Copyright (c) 2017-2023, Rauli Laine
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -24,83 +24,41 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 #include <plorth/context.hpp>
-#include <plorth/value-word.hpp>
-#include "./utils.hpp"
 
 namespace plorth
 {
-  static bool exec_val(const std::shared_ptr<context>&,
-                       const std::shared_ptr<value>&);
-  static bool exec_sym(const std::shared_ptr<context>&,
-                       const std::shared_ptr<symbol>&);
-  static bool exec_wrd(const std::shared_ptr<context>&,
-                       const std::shared_ptr<word>&);
-
-  bool value::exec(const std::shared_ptr<context>& ctx,
-                   const std::shared_ptr<value>& val)
+  static bool
+  exec_symbol(
+    class context& context,
+    const std::shared_ptr<value::symbol>& symbol
+  )
   {
-    if (!val)
-    {
-      ctx->push_null();
-
-      return true;
-    }
-    switch (val->type())
-    {
-      case value::type::symbol:
-        return exec_sym(ctx, std::static_pointer_cast<symbol>(val));
-
-      case value::type::word:
-        return exec_wrd(ctx, std::static_pointer_cast<word>(val));
-
-      default:
-        return exec_val(ctx, val);
-    }
-  }
-
-  static bool exec_val(const std::shared_ptr<context>& ctx,
-                       const std::shared_ptr<value>& val)
-  {
-    std::shared_ptr<value> slot;
-
-    if (!value::eval(ctx, val, slot))
-    {
-      return false;
-    }
-    ctx->push(slot);
-
-    return true;
-  }
-
-  static bool exec_sym(const std::shared_ptr<context>& ctx,
-                       const std::shared_ptr<symbol>& sym)
-  {
-    const auto position = sym->position();
-    const auto id = sym->id();
+    const auto& position = symbol->position();
+    const auto& id = symbol->id();
 
     // Update source code position of the context, if the symbol has such
     // information.
     if (position)
     {
-      ctx->position() = *position;
+      context.position() = *position;
     }
 
-    // Look for prototype of the current item.
+    // Look up prototype of the current item.
     {
-      const auto& stack = ctx->data();
+      const auto& stack = context.data();
 
-      if (!stack.empty() && stack.back())
+      if (!stack.empty())
       {
-        const auto prototype = stack.back()->prototype(ctx->runtime());
-        std::shared_ptr<value> val;
+        const auto prototype = stack.back()->prototype(context.runtime());
+        value::ref slot;
 
-        if (prototype && prototype->property(ctx->runtime(), id, val))
+        if (prototype && prototype->property(context.runtime(), id, slot))
         {
-          if (value::is(val, value::type::quote))
+          if (slot->type() == value::type::quote)
           {
-            return std::static_pointer_cast<quote>(val)->call(ctx);
+            return std::static_pointer_cast<value::quote>(slot)->call(context);
           }
-          ctx->push(val);
+          context << slot;
 
           return true;
         }
@@ -108,40 +66,114 @@ namespace plorth
     }
 
     // Look for a word from dictionary of current context.
-    if (auto word = ctx->dictionary().find(sym))
     {
-      return word->quote()->call(ctx);
-    }
+      const auto& dictionary = context.dictionary();
+      const auto word = dictionary.find(symbol->id());
 
-    // TODO: If not found, see if it's a "fully qualified" name, e.g. a name
-    // with a namespace name, colon and a word - Such as "num:+", and then look
-    // for that from the specified namespace.
+      if (word != std::end(dictionary))
+      {
+        const auto& value = word->second;
+
+        if (value->type() == value::type::quote)
+        {
+          return std::static_pointer_cast<value::quote>(value)->call(context);
+        }
+        context << value;
+
+        return true;
+      }
+    }
 
     // Look from global dictionary.
-    if (auto word = ctx->runtime()->dictionary().find(sym))
     {
-      return word->quote()->call(ctx);
+      const auto& dictionary = context.runtime()->dictionary();
+      const auto word = dictionary.find(symbol->id());
+
+      if (word != std::end(dictionary))
+      {
+        const auto& value = word->second;
+
+        if (value->type() == value::type::quote)
+        {
+          return std::static_pointer_cast<value::quote>(value)->call(context);
+        }
+        context << value;
+
+        return true;
+      }
     }
 
-    // If the name of the word can be converted into number, then do just that.
-    if (is_number(id))
+    // If the name can be converted into a number, then just do that.
+    if (value::number::is_valid(id))
     {
-      ctx->push_number(id);
+      context << std::make_shared<value::number>(id);
 
       return true;
     }
 
-    // Otherwise it's reference error.
-    ctx->error(error::code::reference, U"Unrecognized word: `" + id + U"'");
+    // Otherwise it's an reference error.
+    context.error(
+      value::error::code::reference,
+      U"Unrecognized word: `" + id + U"'",
+      position
+    );
 
     return false;
   }
 
-  static bool exec_wrd(const std::shared_ptr<context>& ctx,
-                       const std::shared_ptr<word>& wrd)
+  static bool
+  exec_word(class context& context, const std::shared_ptr<value::word>& word)
   {
-    ctx->dictionary().insert(wrd);
+    value::ref value;
+
+    if (!context.pop(value))
+    {
+      return false;
+    }
+    context.dictionary()[word->symbol()->id()] = value;
 
     return true;
+  }
+
+  static bool
+  exec_value(class context& context, const value::ref& value)
+  {
+    value::ref slot;
+
+    if (!context.eval(value, slot))
+    {
+      return false;
+    }
+    context << slot;
+
+    return true;
+  }
+
+  bool
+  context::exec(const value::ref& value)
+  {
+    if (!value)
+    {
+      m_data.push_back(m_runtime->null_instance());
+
+      return true;
+    }
+    switch (value->type())
+    {
+      case value::type::symbol:
+        return exec_symbol(
+          *this,
+          std::static_pointer_cast<value::symbol>(value)
+        );
+
+      case value::type::word:
+        return exec_word(
+          *this,
+          std::static_pointer_cast<value::word>(value)
+        );
+
+      default:
+        return exec_value(*this, value);
+    }
   }
 }

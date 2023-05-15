@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2018, Rauli Laine
+ * Copyright (c) 2017-2023, Rauli Laine
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -23,188 +23,127 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-#include <plorth/context.hpp>
-#include <plorth/value-error.hpp>
-#include <plorth/value-quote.hpp>
-
-#include <cassert>
+#include <plorth/runtime.hpp>
+#include <plorth/value.hpp>
 
 namespace plorth
 {
   namespace api
   {
-    runtime::prototype_definition global_dictionary();
-    runtime::prototype_definition array_prototype();
-    runtime::prototype_definition boolean_prototype();
-    runtime::prototype_definition error_prototype();
-    runtime::prototype_definition number_prototype();
-    runtime::prototype_definition object_prototype();
-    runtime::prototype_definition quote_prototype();
-    runtime::prototype_definition string_prototype();
-    runtime::prototype_definition symbol_prototype();
-    runtime::prototype_definition word_prototype();
+    extern "C" const runtime::dictionary_definition array;
+    extern "C" const runtime::dictionary_definition boolean;
+    extern "C" const runtime::dictionary_definition error;
+    extern "C" const runtime::dictionary_definition global;
+    extern "C" const runtime::dictionary_definition null;
+    extern "C" const runtime::dictionary_definition number;
+    extern "C" const runtime::dictionary_definition object;
+    extern "C" const runtime::dictionary_definition quote;
+    extern "C" const runtime::dictionary_definition string;
+    extern "C" const runtime::dictionary_definition symbol;
+    extern "C" const runtime::dictionary_definition word;
   }
 
-  static inline std::shared_ptr<object> make_prototype(
+  static std::shared_ptr<value::object> make_prototype(
     runtime*,
     const char32_t*,
-    const runtime::prototype_definition&
+    const runtime::dictionary_definition&
   );
 
-  std::shared_ptr<runtime> runtime::make(
-    memory::manager& memory_manager,
+  runtime::runtime(
     const std::shared_ptr<io::input>& input,
-    const std::shared_ptr<io::output>& output,
-    const std::shared_ptr<module::manager>& module_manager
+    const std::shared_ptr<io::output>& output
   )
+    : m_input(input)
+    , m_output(output)
+    , m_null(std::make_shared<value::null>())
+    , m_true(std::make_shared<value::boolean>(true))
+    , m_false(std::make_shared<value::boolean>(false))
   {
-    const auto runtime = std::shared_ptr<class runtime>(
-      new (memory_manager) class runtime(&memory_manager)
-    );
-
-    runtime->m_input = input ? input : io::input::standard(memory_manager);
-    runtime->m_output = output ? output : io::output::standard(memory_manager);
-    runtime->m_module_manager =
-      module_manager ?
-      module_manager :
-      module::manager::file_system(memory_manager);
-
-    return runtime;
-  }
-
-  runtime::runtime(memory::manager* memory_manager)
-    : m_memory_manager(memory_manager)
-  {
-    assert(memory_manager);
-
-    m_true_value = value<class boolean>(true);
-    m_false_value = value<class boolean>(false);
-
-    for (auto& entry : api::global_dictionary())
+    for (const auto& entry : api::global)
     {
-      m_dictionary.insert(word(
-        symbol(entry.first),
-        native_quote(entry.second)
-      ));
+      m_dictionary[entry.first] = value::new_native_quote(entry.second);
     }
 
     m_object_prototype = make_prototype(
       this,
       U"object",
-      api::object_prototype()
+      api::object
     );
     m_array_prototype = make_prototype(
       this,
       U"array",
-      api::array_prototype()
+      api::array
     );
     m_boolean_prototype = make_prototype(
       this,
       U"boolean",
-      api::boolean_prototype()
+      api::boolean
     );
     m_error_prototype = make_prototype(
       this,
       U"error",
-      api::error_prototype()
+      api::error
     );
     m_number_prototype = make_prototype(
       this,
       U"number",
-      api::number_prototype()
+      api::number
     );
     m_quote_prototype = make_prototype(
       this,
       U"quote",
-      api::quote_prototype()
+      api::quote
     );
     m_string_prototype = make_prototype(
       this,
       U"string",
-      api::string_prototype()
+      api::string
     );
     m_symbol_prototype = make_prototype(
       this,
       U"symbol",
-      api::symbol_prototype()
+      api::symbol
     );
     m_word_prototype = make_prototype(
       this,
       U"word",
-      api::word_prototype()
+      api::word
     );
   }
 
-  io::input::result runtime::read(io::input::size_type size,
-                                  std::u32string& output,
-                                  io::input::size_type& read)
-  {
-    if (m_input)
-    {
-      return m_input->read(size, output, read);
-    }
-    read = 0;
-
-    return io::input::result::eof;
-  }
-
-  void runtime::print(const std::u32string& str) const
-  {
-    if (m_output)
-    {
-      m_output->write(str);
-    }
-  }
-
-  void runtime::println() const
-  {
-#if defined(_WIN32)
-    static const std::u32string newline = {'\r', '\n'};
-#else
-    static const std::u32string newline = {'\n'};
-#endif
-
-    print(newline);
-  }
-
-  void runtime::println(const std::u32string& str) const
-  {
-    print(str);
-    println();
-  }
-
-  static inline std::shared_ptr<object> make_prototype(
+  static std::shared_ptr<value::object>
+  make_prototype(
     class runtime* runtime,
     const char32_t* name,
-    const runtime::prototype_definition& definition
+    const runtime::dictionary_definition& definition
   )
   {
-    std::vector<object::value_type> properties;
-    std::shared_ptr<object> prototype;
+    value::object::container_type properties;
+    std::shared_ptr<value::object> prototype;
 
-    for (auto& entry : definition)
+    for (const auto& entry : definition)
     {
-      properties.push_back({
-        entry.first,
-        runtime->native_quote(entry.second)
-      });
+      properties[entry.first] = value::new_native_quote(entry.second);
     }
-    properties.push_back({ U"__proto__", std::shared_ptr<value>() });
-    prototype = runtime->object(properties);
+    properties[U"__proto__"] = runtime->null_instance();
+    prototype = value::new_object(properties);
 
     // Define prototype into global dictionary as constant if name has been
     // given.
     if (name)
     {
-      runtime->dictionary().insert(runtime->word(
-        runtime->symbol(name),
-        runtime->compiled_quote({
-          runtime->object({
-            { U"__proto__", runtime->object_prototype() },
-            { U"prototype", prototype }
-          })
+      value::ref prototype_of_prototype = runtime->object_prototype();
+
+      if (!prototype_of_prototype)
+      {
+        prototype_of_prototype = runtime->null_instance();
+      }
+      runtime->dictionary()[name] = value::new_compiled_quote({
+        value::new_object({
+          { U"__proto__", prototype_of_prototype },
+          { U"prototype", prototype }
         })
-      ));
+      });
     }
 
     return prototype;

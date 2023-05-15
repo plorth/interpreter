@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2018, Rauli Laine
+ * Copyright (c) 2017-2023, Rauli Laine
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -23,181 +23,172 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-#include <plorth/context.hpp>
 #include <plorth/parser.hpp>
 
-namespace plorth
-{
-  static std::shared_ptr<value> compile_token(
-    const std::shared_ptr<runtime>&,
-    const std::shared_ptr<parser::ast::token>&
-  );
+#include <plorth/context.hpp>
 
-  std::shared_ptr<quote> context::compile(const std::u32string& source,
-                                          const std::u32string& filename,
-                                          int line,
-                                          int column)
+namespace plorth::value
+{
+  static value::ref compile_token(const std::shared_ptr<parser::ast::token>&);
+
+  std::shared_ptr<quote>
+  quote::compile(
+    class context& context,
+    const std::u32string& source,
+    const std::u32string& filename,
+    int line,
+    int column
+  )
   {
     auto begin = std::begin(source);
     const auto end = std::end(source);
     parser::position position = { filename, line, column };
     const auto result = parser::parse(begin, end, position);
-    std::vector<std::shared_ptr<value>> values;
+    std::vector<ref> values;
 
     if (!result)
     {
-      auto error_message = result.error()->message;
+      auto error_message = result.error().message;
 
       if (error_message.empty())
       {
         error_message = U"Unknown error.";
       }
-      error(error::code::syntax, error_message, result.error()->position);
+      context.error(
+        error::code::syntax,
+        error_message, result.error().position
+      );
 
-      return std::shared_ptr<quote>();
+      return nullptr;
     }
-    values.reserve(result.value()->size());
-    for (const auto& token : *result.value())
+    values.reserve(result.value().size());
+    for (const auto& token : result.value())
     {
-      values.push_back(compile_token(m_runtime, token));
+      if (const auto value = compile_token(token))
+      {
+        values.push_back(value);
+      }
     }
 
-    return m_runtime->compiled_quote(values);
+    return value::new_compiled_quote(values);
   }
 
-  static std::shared_ptr<array> compile_array_token(
-    const std::shared_ptr<class runtime>& runtime,
-    const std::shared_ptr<parser::ast::array>& token
-  )
+  static std::shared_ptr<array>
+  compile_array_token(const std::shared_ptr<parser::ast::array>& token)
   {
     const auto& elements = token->elements();
     const auto size = elements.size();
-    std::shared_ptr<value> result[size];
+    array::container_type result;
 
+    result.reserve(size);
     for (std::size_t i = 0; i < size; ++i)
     {
-      result[i] = compile_token(runtime, elements[i]);
+      if (const auto element = compile_token(elements[i]))
+      {
+        result.push_back(element);
+      }
     }
 
-    return runtime->array(result, size);
+    return value::new_array(result);
   }
 
-  static std::shared_ptr<object> compile_object_token(
-    const std::shared_ptr<class runtime>& runtime,
-    const std::shared_ptr<parser::ast::object>& token
-  )
+  static std::shared_ptr<object>
+  compile_object_token(const std::shared_ptr<parser::ast::object>& token)
   {
     const auto& properties = token->properties();
     const auto size = properties.size();
-    std::vector<object::value_type> result;
+    object::container_type result;
 
-    result.reserve(size);
     for (std::size_t i = 0; i < size; ++i)
     {
       const auto& property = properties[i];
 
-      result.push_back(object::value_type(
-        property.first,
-        compile_token(runtime, property.second)
-      ));
+      if (const auto value = compile_token(property.second))
+      {
+        result[property.first] = value;
+      }
     }
 
-    return runtime->object(result);
+    return value::new_object(result);
   }
 
-  static std::shared_ptr<quote> compile_quote_token(
-    const std::shared_ptr<class runtime>& runtime,
-    const std::shared_ptr<parser::ast::quote>& token
-  )
+  static std::shared_ptr<quote>
+  compile_quote_token(const std::shared_ptr<parser::ast::quote>& token)
   {
     const auto& children = token->children();
     const auto size = children.size();
-    std::vector<std::shared_ptr<value>> result;
+    array::container_type result;
 
     result.reserve(size);
     for (std::size_t i = 0; i < size; ++i)
     {
-      result.push_back(compile_token(runtime, children[i]));
+      if (const auto value = compile_token(children[i]))
+      {
+        result.push_back(value);
+      }
     }
 
-    return runtime->compiled_quote(result);
+    return value::new_compiled_quote(result);
   }
 
-  static std::shared_ptr<string> compile_string_token(
-    const std::shared_ptr<class runtime>& runtime,
-    const std::shared_ptr<parser::ast::string>& token
-  )
+  static std::shared_ptr<string>
+  compile_string_token(const std::shared_ptr<parser::ast::string>& token)
   {
-    return runtime->string(token->value());
+    return value::new_string(token->value());
   }
 
-  static std::shared_ptr<symbol> compile_symbol_token(
-    const std::shared_ptr<class runtime>& runtime,
-    const std::shared_ptr<parser::ast::symbol>& token
-  )
+  static std::shared_ptr<symbol>
+  compile_symbol_token(const std::shared_ptr<parser::ast::symbol>& token)
   {
-    return runtime->symbol(token->id(), token->position());
+    return value::new_symbol(token->id(), token->position());
   }
 
-  static std::shared_ptr<word> compile_word_token(
-    const std::shared_ptr<class runtime>& runtime,
-    const std::shared_ptr<parser::ast::word>& token
-  )
+  static std::shared_ptr<word>
+  compile_word_token(const std::shared_ptr<parser::ast::word>& token)
   {
-    return runtime->word(
-      compile_symbol_token(runtime, token->symbol()),
-      compile_quote_token(runtime, token->quote())
-    );
+    return value::new_word(compile_symbol_token(token->symbol()));
   }
 
-  static std::shared_ptr<value> compile_token(
-    const std::shared_ptr<class runtime>& runtime,
-    const std::shared_ptr<parser::ast::token>& token
-  )
+  static value::ref
+  compile_token(const std::shared_ptr<parser::ast::token>& token)
   {
     if (!token)
     {
-      return std::shared_ptr<value>();
+      return nullptr;
     }
     switch (token->type())
     {
       case parser::ast::token::type::array:
         return compile_array_token(
-          runtime,
           std::static_pointer_cast<parser::ast::array>(token)
         );
 
       case parser::ast::token::type::object:
         return compile_object_token(
-          runtime,
           std::static_pointer_cast<parser::ast::object>(token)
         );
 
       case parser::ast::token::type::quote:
         return compile_quote_token(
-          runtime,
           std::static_pointer_cast<parser::ast::quote>(token)
         );
 
       case parser::ast::token::type::string:
         return compile_string_token(
-          runtime,
           std::static_pointer_cast<parser::ast::string>(token)
         );
 
       case parser::ast::token::type::symbol:
         return compile_symbol_token(
-          runtime,
           std::static_pointer_cast<parser::ast::symbol>(token)
         );
 
       case parser::ast::token::type::word:
         return compile_word_token(
-          runtime,
           std::static_pointer_cast<parser::ast::word>(token)
         );
     }
 
-    return std::shared_ptr<value>();
+    return nullptr;
   }
 }

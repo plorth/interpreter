@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2018, Rauli Laine
+ * Copyright (c) 2017-2023, Rauli Laine
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -20,142 +20,96 @@
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
  * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE* POSSIBILITY OF SUCH DAMAGE.
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
  */
 #include <plorth/context.hpp>
-#include <plorth/value-word.hpp>
-#include "./utils.hpp"
 
 namespace plorth
 {
-  static bool eval_val(const std::shared_ptr<context>&,
-                       const std::shared_ptr<value>&,
-                       std::shared_ptr<value>&);
-  static bool eval_ary(const std::shared_ptr<context>&,
-                       const std::shared_ptr<array>&,
-                       std::shared_ptr<value>&);
-  static bool eval_obj(const std::shared_ptr<context>&,
-                       const std::shared_ptr<object>&,
-                       std::shared_ptr<value>&);
-  static bool eval_sym(const std::shared_ptr<context>&,
-                       const std::shared_ptr<symbol>&,
-                       std::shared_ptr<value>&);
-  static bool eval_wrd(const std::shared_ptr<context>&,
-                       const std::shared_ptr<word>&,
-                       std::shared_ptr<value>&);
-
-  bool value::eval(const std::shared_ptr<context>& ctx,
-                   const std::shared_ptr<value>& val,
-                   std::shared_ptr<value>& slot)
+  static bool
+  eval_array(
+    class context& context,
+    const std::shared_ptr<value::array>& array,
+    value::ref& slot
+  )
   {
-    if (!val)
+    const auto& elements = array->elements();
+    value::array::container_type result;
+
+    result.reserve(elements.size());
+    for (const auto& element : elements)
     {
-      slot.reset();
+      value::ref element_slot;
 
-      return true;
-    }
-    switch (val->type())
-    {
-      case value::type::array:
-        return eval_ary(ctx, std::static_pointer_cast<array>(val), slot);
-
-      case value::type::object:
-        return eval_obj(ctx, std::static_pointer_cast<object>(val), slot);
-
-      case value::type::symbol:
-        return eval_sym(ctx, std::static_pointer_cast<symbol>(val), slot);
-
-      case value::type::word:
-        return eval_wrd(ctx, std::static_pointer_cast<word>(val), slot);
-
-      default:
-        return eval_val(ctx, val, slot);
-    }
-  }
-
-  static bool eval_val(const std::shared_ptr<context>& ctx,
-                       const std::shared_ptr<value>& val,
-                       std::shared_ptr<value>& slot)
-  {
-    slot = val;
-
-    return true;
-  }
-
-  static bool eval_ary(const std::shared_ptr<context>& ctx,
-                       const std::shared_ptr<array>& ary,
-                       std::shared_ptr<value>& slot)
-  {
-    const auto size = ary->size();
-    std::shared_ptr<value> elements[size];
-
-    for (array::size_type i = 0; i < size; ++i)
-    {
-      const auto& element = ary->at(i);
-      std::shared_ptr<value> element_slot;
-
-      if (element && !value::eval(ctx, element, element_slot))
+      if (!context.eval(element, element_slot))
       {
         return false;
       }
-      elements[i] = element_slot;
+      result.push_back(element_slot);
     }
-    slot = ctx->runtime()->array(elements, size);
+    slot = value::new_array(result);
 
     return true;
   }
 
-  static bool eval_obj(const std::shared_ptr<context>& ctx,
-                       const std::shared_ptr<object>& obj,
-                       std::shared_ptr<value>& slot)
+  static bool
+  eval_object(
+    class context& context,
+    const std::shared_ptr<value::object>& object,
+    value::ref& slot
+  )
   {
-    std::vector<object::value_type> properties;
+    value::object::container_type result;
 
-    properties.reserve(obj->size());
-    for (const auto& property : obj->entries())
+    for (const auto& property : object->properties())
     {
-      std::shared_ptr<value> value_slot;
+      value::ref value_slot;
 
-      if (property.second && !value::eval(ctx, property.second, value_slot))
+      if (!context.eval(property.second, value_slot))
       {
         return false;
       }
-      properties.push_back({ property.first, value_slot });
+      result[property.first] = value_slot;
     }
-    slot = ctx->runtime()->object(properties);
+    slot = value::new_object(result);
 
     return true;
   }
 
-  static bool eval_sym(const std::shared_ptr<context>& ctx,
-                       const std::shared_ptr<symbol>& sym,
-                       std::shared_ptr<value>& slot)
+  static bool
+  eval_symbol(
+    class context& context,
+    const std::shared_ptr<value::symbol>& symbol,
+    value::ref& slot
+  )
   {
-    const auto id = sym->id();
+    const auto& id = symbol->id();
 
     if (!id.compare(U"null"))
     {
-      slot.reset();
+      slot = context.runtime()->null_instance();
     }
     else if (!id.compare(U"true"))
     {
-      slot = ctx->runtime()->true_value();
+      slot = context.runtime()->true_instance();
     }
     else if (!id.compare(U"false"))
     {
-      slot = ctx->runtime()->false_value();
+      slot = context.runtime()->false_instance();
     }
     else if (!id.compare(U"drop"))
     {
-      return ctx->pop(slot);
+      return context.pop(slot);
     }
-    else if (is_number(id))
+    else if (value::number::is_valid(id))
     {
-      slot = ctx->runtime()->number(id);
+      slot = std::make_shared<value::number>(id);
     } else {
-      ctx->error(
-        error::code::syntax,
-        U"Unexpected `" + id + U"'; Missing value."
+      context.error(
+        value::error::code::syntax,
+        U"Unexpected `" + id + U"'; Missing value.",
+        symbol->position()
       );
 
       return false;
@@ -164,15 +118,74 @@ namespace plorth
     return true;
   }
 
-  static bool eval_wrd(const std::shared_ptr<context>& ctx,
-                       const std::shared_ptr<word>& wrd,
-                       std::shared_ptr<value>& slot)
+  static bool
+  eval_value(
+    class context& context,
+    const value::ref& value,
+    value::ref& slot
+  )
   {
-    ctx->error(
-      error::code::syntax,
+    slot = value;
+
+    return true;
+  }
+
+  static bool
+  eval_word(
+    class context& context,
+    const std::shared_ptr<value::word>& word,
+    value::ref& slot
+  )
+  {
+    context.error(
+      value::error::code::syntax,
       U"Unexpected word declaration; Missing value."
     );
 
     return false;
+  }
+
+  bool
+  context::eval(const value::ref& value, value::ref& slot)
+  {
+    if (!value)
+    {
+      slot = m_runtime->null_instance();
+
+      return true;
+    }
+    switch (value->type())
+    {
+      case value::type::array:
+        return eval_array(
+          *this,
+          std::static_pointer_cast<value::array>(value),
+          slot
+        );
+
+      case value::type::object:
+        return eval_object(
+          *this,
+          std::static_pointer_cast<value::object>(value),
+          slot
+        );
+
+      case value::type::symbol:
+        return eval_symbol(
+          *this,
+          std::static_pointer_cast<value::symbol>(value),
+          slot
+        );
+
+      case value::type::word:
+        return eval_word(
+          *this,
+          std::static_pointer_cast<value::word>(value),
+          slot
+        );
+
+      default:
+        return eval_value(*this, value, slot);
+    }
   }
 }

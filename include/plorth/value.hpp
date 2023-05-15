@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2018, Rauli Laine
+ * Copyright (c) 2017-2023, Rauli Laine
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -25,138 +25,107 @@
  */
 #pragma once
 
-#include <plorth/memory.hpp>
-#include <plorth/unicode.hpp>
+#include <plorth/value/array.hpp>
+#include <plorth/value/boolean.hpp>
+#include <plorth/value/error.hpp>
+#include <plorth/value/null.hpp>
+#include <plorth/value/number.hpp>
+#include <plorth/value/object.hpp>
+#include <plorth/value/quote.hpp>
+#include <plorth/value/string.hpp>
+#include <plorth/value/symbol.hpp>
+#include <plorth/value/word.hpp>
 
-namespace plorth
+namespace plorth::value
 {
-  class context;
-  class object;
-
-  /**
-   * Abstract base class for everything that acts as an value in Plorth.
-   */
-  class value : public memory::managed
+  inline std::shared_ptr<array>
+  new_array(const std::initializer_list<value::ref>& elements)
   {
-  public:
-    /**
-     * Enumeration of different supported value types.
-     */
-    enum class type
-    {
-      /** Value for null. */
-      null = 0,
-      /** Boolean values. */
-      boolean = 1,
-      /** Number (floating point) values. */
-      number = 2,
-      /** String (Unicode) values. */
-      string = 3,
-      /** Array values. */
-      array = 4,
-      /** Other type of objects. */
-      object = 5,
-      /** Symbols. */
-      symbol = 6,
-      /** Quotes. */
-      quote = 7,
-      /** Words. */
-      word = 8,
-      /** Errors. */
-      error = 9
-    };
+    return std::make_shared<array>(elements);
+  }
 
-    /**
-     * Returns type of the value.
-     */
-    virtual enum type type() const = 0;
+  inline std::shared_ptr<array>
+  new_array(const array::container_type& elements)
+  {
+    return std::make_shared<array>(elements);
+  }
 
-    /**
-     * Returns textual description of type of the value.
-     */
-    std::u32string type_description() const;
+  inline std::shared_ptr<boolean>
+  new_boolean(boolean::value_type value)
+  {
+    return std::make_shared<boolean>(value);
+  }
 
-    /**
-     * Returns textual description of given value type.
-     */
-    static std::u32string type_description(enum type type);
+  inline std::shared_ptr<error>
+  new_error(
+    enum error::code code,
+    const std::u32string& message,
+    const std::optional<parser::position>& position = std::nullopt
+  )
+  {
+    return std::make_shared<error>(code, message, position);
+  }
 
-    /**
-     * Tests whether given value is of given type.
-     */
-    static inline bool is(const std::shared_ptr<value>& val, enum type t)
-    {
-      return val ? val->is(t) : t == type::null;
-    }
+  inline std::shared_ptr<null>
+  new_null()
+  {
+    return std::make_shared<null>();
+  }
 
-    /**
-     * Tests whether the value is of given type.
-     */
-    inline bool is(enum type t) const
-    {
-      return type() == t;
-    }
+  inline std::shared_ptr<number>
+  new_int(number::int_type value)
+  {
+    return std::make_shared<number>(value);
+  }
 
-    /**
-     * Determines prototype object of the value, based on it's type. If the
-     * value is an object, property called "__proto__" will be used instead,
-     * with the runtime's object prototype acting as a fallback.
-     *
-     * \param runtime Script runtime to use for prototype retrieval.
-     * \return        Prototype object of the value.
-     */
-    std::shared_ptr<object> prototype(
-      const std::shared_ptr<class runtime>& runtime
-    ) const;
+  inline std::shared_ptr<number>
+  new_real(number::real_type value)
+  {
+    return std::make_shared<number>(value);
+  }
 
-    /**
-     * Tests whether two values are equal.
-     *
-     * \param that Other value to test this one against.
-     */
-    virtual bool equals(const std::shared_ptr<value>& that) const = 0;
+  inline std::shared_ptr<object>
+  new_object(const std::initializer_list<object::value_type>& properties)
+  {
+    return std::make_shared<object>(properties);
+  }
 
-    /**
-     * Executes value as part of compiled quote. Default implementation
-     * evaluates the value and pushes result into the context.
-     *
-     * \param ctx Execution context to execute the value in.
-     * \param val Value to execute.
-     * \return    Boolean flag telling whether the execution was successfull or
-     *            whether an error was encountered.
-     */
-    static bool exec(const std::shared_ptr<context>& ctx,
-                     const std::shared_ptr<value>& val);
+  inline std::shared_ptr<object>
+  new_object(const object::container_type& properties)
+  {
+    return std::make_shared<object>(properties);
+  }
 
-    /**
-     * Evaluates value as element of an array or value of object's property.
-     * Default implementation just returns the value itself.
-     *
-     * \param ctx  Execution context to evaluate the value in.
-     * \param val  Value to evaluate.
-     * \param slot Where result of the evaluation will be placed into.
-     * \return     Boolean flag telling whether the execution was successful or
-     *             whether an error was encountered.
-     */
-    static bool eval(const std::shared_ptr<context>& ctx,
-                     const std::shared_ptr<value>& val,
-                     std::shared_ptr<value>& slot);
+  inline std::shared_ptr<quote>
+  new_compiled_quote(const std::vector<ref>& values)
+  {
+    return std::make_shared<quote>(values);
+  }
 
-    /**
-     * Constructs string representation of the value.
-     */
-    virtual std::u32string to_string() const = 0;
+  inline std::shared_ptr<quote>
+  new_native_quote(const quote::callback_type& callback)
+  {
+    return std::make_shared<quote>(callback);
+  }
 
-    /**
-     * Constructs a string that resembles as accurately as possible what this
-     * value would look like in source code.
-     */
-    virtual std::u32string to_source() const = 0;
-  };
+  inline std::shared_ptr<string>
+  new_string(value::string::const_reference value)
+  {
+    return std::make_shared<string>(value);
+  }
 
-  bool operator==(const std::shared_ptr<value>&, const std::shared_ptr<value>&);
-  bool operator!=(const std::shared_ptr<value>&, const std::shared_ptr<value>&);
+  inline std::shared_ptr<symbol>
+  new_symbol(
+    const std::u32string& id,
+    const std::optional<parser::position>& position = std::nullopt
+  )
+  {
+    return std::make_shared<symbol>(id, position);
+  }
 
-  std::ostream& operator<<(std::ostream&, enum value::type);
-  std::ostream& operator<<(std::ostream&, const value*);
+  inline std::shared_ptr<word>
+  new_word(const std::shared_ptr<class symbol>& symbol)
+  {
+    return std::make_shared<word>(symbol);
+  }
 }

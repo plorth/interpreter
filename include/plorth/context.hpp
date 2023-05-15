@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2018, Rauli Laine
+ * Copyright (c) 2017-2023, Rauli Laine
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -25,32 +25,33 @@
  */
 #pragma once
 
-#include <plorth/runtime.hpp>
-#include <plorth/value-error.hpp>
-
 #include <deque>
+
+#include <plorth/runtime.hpp>
+#include <plorth/value.hpp>
 
 namespace plorth
 {
-  class word;
-
   /**
    * Represents program execution state.
    */
-  class context : public memory::managed
+  class context
   {
   public:
-    using container_type = std::deque<std::shared_ptr<value>>;
+    using value_type = value::ref;
+    using container_type = std::deque<value_type>;
+    using size_type = container_type::size_type;
+    using iterator = container_type::reverse_iterator;
+    using reverse_iterator = container_type::iterator;
+    using const_iterator = container_type::const_reverse_iterator;
+    using const_reverse_iterator = container_type::const_iterator;
 
-    /**
-     * Constructs new context.
-     *
-     * \param runtime Runtime associated with this context.
-     * \return        Reference to the created context.
-     */
-    static std::shared_ptr<context> make(
-      const std::shared_ptr<class runtime>& runtime
-    );
+    explicit context(const std::shared_ptr<class runtime>& runtime);
+
+    context(const context&) = delete;
+    context(context&&) = delete;
+    void operator=(const context&) = delete;
+    void operator=(context&&) = delete;
 
     /**
      * Returns the runtime associated with this context.
@@ -61,10 +62,59 @@ namespace plorth
     }
 
     /**
+     * Returns the number of items contained in the data stack.
+     */
+    inline size_type size() const
+    {
+      return m_data.size();
+    }
+
+    /**
+     * Returns the data stack.
+     */
+    inline container_type& data()
+    {
+      return m_data;
+    }
+
+    /**
+     * Returns the data stack.
+     */
+    inline const container_type& data() const
+    {
+      return m_data;
+    }
+
+    /**
+     * Returns the dictionary used by this context to store words.
+     */
+    inline runtime::dictionary_type& dictionary()
+    {
+      return m_dictionary;
+    }
+
+    /**
+     * Returns the dictionary used by this context to store words.
+     */
+    inline const runtime::dictionary_type& dictionary() const
+    {
+      return m_dictionary;
+    }
+
+    /**
      * Returns the currently uncaught error in this context or null reference
      * if this context has no error.
      */
-    inline const std::shared_ptr<class error>& error() const
+    inline std::shared_ptr<value::error>& error()
+    {
+      return m_error;
+    }
+
+    /**
+     * Returns the currently uncaught error in this context or null reference
+     * if this context has no error.
+     */
+    inline const std::shared_ptr<value::error>& error() const
     {
       return m_error;
     }
@@ -74,7 +124,7 @@ namespace plorth
      *
      * \param error Error instance to set as the currently uncaught error.
      */
-    inline void error(const std::shared_ptr<class error>& error)
+    inline void error(const std::shared_ptr<value::error>& error)
     {
       m_error = error;
     }
@@ -89,175 +139,44 @@ namespace plorth
      *                 occurred
      */
     void error(
-      enum error::code code,
+      enum value::error::code code,
       const std::u32string& message,
-      const std::optional<parser::position>& position =
-        std::optional<parser::position>()
+      const std::optional<parser::position>& position = std::nullopt
     );
 
     /**
-     * Removes currently uncaught error in the context.
+     * Returns reference to a structure which has information about current
+     * position in source code.
      */
-    inline void clear_error()
+    inline struct parser::position& position()
     {
-      m_error.reset();
+      return m_position;
     }
 
     /**
-     * Returns the dictionary used by this context to store words.
+     * Returns reference to a structure which has information about current
+     * position in source code.
      */
-    inline class dictionary& dictionary()
+    inline const struct parser::position& position() const
     {
-      return m_dictionary;
+      return m_position;
     }
 
     /**
-     * Returns the dictionary used by this context to store words.
-     */
-    inline const class dictionary& dictionary() const
-    {
-      return m_dictionary;
-    }
-
-    /**
-     * Compiles given source code into a quote.
+     * Pushes an value on top of the data stack.
      *
-     * \param source   Source code to compile into quote.
-     * \param filename Optional file name information from which the source
-     *                 code was read from.
-     * \param line     Initial line number of the source code. This is for
-     *                 debugging purposes only.
-     * \param column   Initial column number of the source code. This is for
-     *                 debugging purposes only.
-     * \return         Reference the quote that was compiled from given source,
-     *                 or null reference if syntax error was encountered.
+     * \param value Value to be pushed as the new top-most value of the data
+     *              stack.
      */
-    std::shared_ptr<quote> compile(const std::u32string& source,
-                                   const std::u32string& filename = U"",
-                                   int line = 1,
-                                   int column = 1);
-
-    /**
-     * Provides direct access to the data stack.
-     */
-    inline container_type& data()
+    inline void push(const value::ref& value)
     {
-      return m_data;
+      if (value)
+      {
+        m_data.push_back(value);
+      } else {
+        m_data.push_back(m_runtime->null_instance());
+      }
     }
-
-    /**
-     * Provides direct access to the data stack.
-     */
-    inline const container_type& data() const
-    {
-      return m_data;
-    }
-
-    /**
-     * Returns true if the data stack is empty.
-     */
-    inline bool empty() const
-    {
-      return m_data.empty();
-    }
-
-    /**
-     * Returns the number of values currently in the data stack.
-     */
-    inline std::size_t size() const
-    {
-      return m_data.size();
-    }
-
-    /**
-     * Removes all values from the data stack.
-     */
-    inline void clear()
-    {
-      m_data.clear();
-    }
-
-    /**
-     * Pushes given value into the data stack.
-     */
-    inline void push(const std::shared_ptr<class value>& value)
-    {
-      m_data.push_back(value);
-    }
-
-    /**
-     * Pushes null value into the data stack.
-     */
-    void push_null();
-
-    /**
-     * Pushes boolean value into the data stack.
-     */
-    void push_boolean(bool value);
-
-    /**
-     * Pushes integer number value into the data stack.
-     */
-    void push_int(number::int_type value);
-
-    /**
-     * Pushes real number value into the data stack.
-     */
-    void push_real(number::real_type value);
-
-    /**
-     * Pushes either integer or real number into stack, based on the given text
-     * input which is parsed into a number.
-     */
-    void push_number(const std::u32string& value);
-
-    /**
-     * Pushes string value into the data stack.
-     */
-    void push_string(const std::u32string& value);
-
-    /**
-     * Constructs string value from given array of Unicode code points and
-     * pushes it onto data stack.
-     */
-    void push_string(string::const_pointer chars, string::size_type length);
-
-    /**
-     * Constructs array from given sequence of values and pushes it into the
-     * data stack.
-     */
-    void push_array(const std::vector<std::shared_ptr<value>>& elements);
-
-    /**
-     * Constructs array from given sequence of values and pushes it into the
-     * data stack.
-     */
-    void push_array(array::const_pointer elements, array::size_type size);
-
-    /**
-     * Constructs object from given properties and pushes it into the data
-     * stack.
-     */
-    void push_object(const std::vector<object::value_type>& properties);
-
-    /**
-     * Constructs symbol from given identifier and pushes it onto the data
-     * stack.
-     */
-    void push_symbol(const std::u32string& id);
-
-    /**
-     * Constructs quote from given sequence of values and pushes it onto the
-     * data stack.
-     */
-    void push_quote(const std::vector<std::shared_ptr<value>>& values);
-
-    /**
-     * Constructs word from given pair of symbol and quote and pushes it onto
-     * the data stack.
-     */
-    void push_word(const std::shared_ptr<class symbol>& symbol,
-                   const std::shared_ptr<class quote>& quote);
 
     /**
      * Pops value from the data stack and discards it. If the stack is empty,
@@ -287,7 +206,7 @@ namespace plorth
      * \return     Boolean flag that tells whether the operation was
      *             successfull or not.
      */
-    bool pop(std::shared_ptr<value>& slot);
+    bool pop(value_type& slot);
 
     /**
      * Pops value of certain type from the data stack and places it into given
@@ -299,7 +218,18 @@ namespace plorth
      * \return     Boolean flag that tells whether the operation was
      *             successfull or not.
      */
-    bool pop(std::shared_ptr<value>& slot, enum value::type type);
+    bool pop(value_type& slot, enum value::type type);
+
+    /**
+     * Pops array value from the data stack and places it into given slot. If
+     * the stack is empty, range error will be set. If something else than
+     * array is as top-most value of the stack, type error will be set.
+     *
+     * \param slot Where the array value will be placed into.
+     * \return     Boolean flag that tells whether the operation was
+     *             successfull or not.
+     */
+    bool pop_array(std::shared_ptr<value::array>& slot);
 
     /**
      * Pops boolean value from the data stack and places it into given slot. If
@@ -313,6 +243,17 @@ namespace plorth
     bool pop_boolean(bool& slot);
 
     /**
+     * Pops error value from the data stack and places it into given slot. If
+     * the stack is empty, range error will be set. If something else than
+     * error is as top-most value of the stack, type error will be set.
+     *
+     * \param slot Where the error value will be placed into.
+     * \return     Boolean flag that tells whether the operation was
+     *             successfull or not.
+     */
+    bool pop_error(std::shared_ptr<value::error>& slot);
+
+    /**
      * Pops number value from the data stack and places it into given slot. If
      * the stack is empty, range error will be set. If something else than
      * number is as top-most value of the stack, type error will be set.
@@ -321,51 +262,18 @@ namespace plorth
      * \return     Boolean flag that tells whether the operation was
      *             successfull or not.
      */
-    bool pop_number(std::shared_ptr<number>& slot);
+    bool pop_number(std::shared_ptr<value::number>& slot);
 
     /**
-     * Pops string value from the data stack and places it into given slot. If
+     * Pops object value from the data stack and places it into given slot. If
      * the stack is empty, range error will be set. If something else than
-     * string is as top-most value of the stack, type error will be set.
+     * object is as top-most value of the stack, type error will be set.
      *
-     * \param slot Where the string value will be placed into.
+     * \param slot Where the object value will be placed into.
      * \return     Boolean flag that tells whether the operation was
      *             successfull or not.
      */
-    bool pop_string(std::shared_ptr<string>& slot);
-
-    /**
-     * Pops array value from the data stack and places it into given slot. If
-     * the stack is empty, range error will be set. If something else than
-     * array is as top-most value of the stack, type error will be set.
-     *
-     * \param slot Where the array value will be placed into.
-     * \return     Boolean flag that tells whether the operation was
-     *             successfull or not.
-     */
-    bool pop_array(std::shared_ptr<array>& slot);
-
-    /**
-     * Pops object from the data stack and places it into given slot. If the
-     * stack is empty, range error will be set. If something else than object
-     * is as top-most value of the stack, type error will be set.
-     *
-     * \param slot Where the object will be placed into.
-     * \return     Boolean flag that tells whether the operation was
-     *             successfull or not.
-     */
-    bool pop_object(std::shared_ptr<object>& slot);
-
-    /**
-     * Pops symbol from the data stack and places it into given slot. If the
-     * stack is empty, range error will be set. If something else than symbol
-     * is as top-most value of the stack, type error will be set.
-     *
-     * \param slot Where the symbol will be placed into.
-     * \return     Boolean flag that tells whether the operation was
-     *             successfull or not.
-     */
-    bool pop_symbol(std::shared_ptr<symbol>& slot);
+    bool pop_object(std::shared_ptr<value::object>& slot);
 
     /**
      * Pops quote from the data stack and places it into given slot. If the
@@ -376,7 +284,29 @@ namespace plorth
      * \return     Boolean flag that tells whether the operation was
      *             successfull or not.
      */
-    bool pop_quote(std::shared_ptr<quote>& slot);
+    bool pop_quote(std::shared_ptr<value::quote>& slot);
+
+    /**
+     * Pops string value from the data stack and places it into given slot. If
+     * the stack is empty, range error will be set. If something else than
+     * string is as top-most value of the stack, type error will be set.
+     *
+     * \param slot Where the string value will be placed into.
+     * \return     Boolean flag that tells whether the operation was
+     *             successfull or not.
+     */
+    bool pop_string(value::string::reference slot);
+
+    /**
+     * Pops symbol from the data stack and places it into given slot. If the
+     * stack is empty, range error will be set. If something else than symbol
+     * is as top-most value of the stack, type error will be set.
+     *
+     * \param slot Where the symbol will be placed into.
+     * \return     Boolean flag that tells whether the operation was
+     *             successfull or not.
+     */
+    bool pop_symbol(std::shared_ptr<value::symbol>& slot);
 
     /**
      * Pops word from the data stack and places it into given slot. If the
@@ -387,67 +317,198 @@ namespace plorth
      * \return     Boolean flag that tells whether the operation was
      *             successfull or not.
      */
-    bool pop_word(std::shared_ptr<word>& slot);
+    bool pop_word(std::shared_ptr<value::word>& slot);
 
-#if PLORTH_ENABLE_FILE_SYSTEM_MODULES
-    /**
-     * Returns optional filename of the context, when the context is executed
-     * as module.
-     */
-    inline const std::u32string& filename() const
+
+    bool eval(const value::ref& value, value::ref& slot);
+    bool exec(const value::ref& value);
+
+    inline iterator begin()
     {
-      return m_filename;
+      return std::rbegin(m_data);
+    }
+
+    inline const_iterator begin() const
+    {
+      return std::rbegin(m_data);
+    }
+
+    inline const_iterator cbegin() const
+    {
+      return std::crbegin(m_data);
+    }
+
+    inline iterator end()
+    {
+      return std::rend(m_data);
+    }
+
+    inline const_iterator end() const
+    {
+      return std::rend(m_data);
+    }
+
+    inline const_iterator cend() const
+    {
+      return std::crend(m_data);
+    }
+
+    inline reverse_iterator rbegin()
+    {
+      return std::begin(m_data);
+    }
+
+    inline const_reverse_iterator rbegin() const
+    {
+      return std::begin(m_data);
+    }
+
+    inline const_reverse_iterator crbegin() const
+    {
+      return std::cbegin(m_data);
+    }
+
+    inline reverse_iterator rend()
+    {
+      return std::end(m_data);
+    }
+
+    inline const_reverse_iterator rend() const
+    {
+      return std::end(m_data);
+    }
+
+    inline const_reverse_iterator crend() const
+    {
+      return std::cend(m_data);
     }
 
     /**
-     * Sets optional filename of the context, when the context is executed as
-     * module.
+     * Pushes given value on the data stack.
      */
-    inline void filename(const std::u32string& fn)
+    inline context&
+    operator<<(const value_type& value)
     {
-      m_filename = fn;
-    }
-#endif
+      if (value)
+      {
+        m_data.push_back(value);
+      } else {
+        m_data.push_back(m_runtime->null_instance());
+      }
 
-    /**
-     * Returns reference to a structure which has information about current
-     * position in source code.
-     */
-    inline struct parser::position& position()
-    {
-      return m_position;
+      return *this;
     }
 
     /**
-     * Returns reference to a structure which has information about current
-     * position in source code.
+     * Pushes null value on to the data stack.
      */
-    inline const struct parser::position& position() const
+    inline context&
+    operator<<(value::null::value_type)
     {
-      return m_position;
+      push(m_runtime->null_instance());
+
+      return *this;
     }
 
-  protected:
     /**
-     * Constructs new context.
-     *
-     * \param runtime Runtime associated with this context.
+     * Pushes an boolean value on to the data stack.
      */
-    explicit context(const std::shared_ptr<class runtime>& runtime);
+    inline context&
+    operator<<(value::boolean::value_type value)
+    {
+      push(value ? m_runtime->true_instance() : m_runtime->false_instance());
+
+      return *this;
+    }
+
+    /**
+     * Pushes an integer numeric value on to the data stack.
+     */
+    inline context&
+    operator<<(value::number::int_type value)
+    {
+      push(value::new_int(value));
+
+      return *this;
+    }
+
+    /**
+     * Pushes an real numeric value on to the data stack.
+     */
+    inline context&
+    operator<<(value::number::real_type value)
+    {
+      push(value::new_real(value));
+
+      return *this;
+    }
+
+    /**
+     * Pushes an string value on to the data stack.
+     */
+    inline context&
+    operator<<(value::string::const_reference& value)
+    {
+      push(value::new_string(value));
+
+      return *this;
+    }
+
+    /**
+     * Pushes an array value on to the data stack.
+     */
+    inline context&
+    operator<<(const std::initializer_list<value::ref>& elements)
+    {
+      push(value::new_array(elements));
+
+      return *this;
+    }
+
+    /**
+     * Pushes an array value on to the data stack.
+     */
+    inline context&
+    operator<<(const value::array::container_type& elements)
+    {
+      push(value::new_array(elements));
+
+      return *this;
+    }
+
+    /**
+     * Pushes an object value on to the data stack.
+     */
+    inline context&
+    operator<<(
+      const std::initializer_list<value::object::value_type>& properties
+    )
+    {
+      push(value::new_object(properties));
+
+      return *this;
+    }
+
+    /**
+     * Pushes an object value on to the data stack.
+     */
+    inline context&
+    operator<<(const value::object::container_type& properties)
+    {
+      push(value::new_object(properties));
+
+      return *this;
+    }
 
   private:
     /** Runtime associated with this context. */
     const std::shared_ptr<class runtime> m_runtime;
-    /** Currently uncaught error in this context. */
-    std::shared_ptr<class error> m_error;
-    /** Data stack used for storing values in this context. */
+    /** Values contained in this context's data stack. */
     container_type m_data;
     /** Container for words associated with this context. */
-    class dictionary m_dictionary;
-#if PLORTH_ENABLE_FILE_SYSTEM_MODULES
-    /** Optional filename of the context, when executed as module. */
-    std::u32string m_filename;
-#endif
+    runtime::dictionary_type m_dictionary;
+    /** Currently uncaught error in this context. */
+    std::shared_ptr<value::error> m_error;
     /** Current position in source code. */
     struct parser::position m_position;
   };
