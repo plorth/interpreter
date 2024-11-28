@@ -8,10 +8,8 @@ C++ library.
 ## Compilation
 
 C++17 capable compiler and [CMake] are required to compile the interpreter.
-Dependencies are handled by [cget], which also needs to be installed.
 
 ```bash
-$ cget install
 $ mkdir build
 $ cd build
 $ cmake ..
@@ -19,4 +17,3 @@ $ make
 ```
 
 [CMake]: https://cmake.org
-[cget]: https://github.com/pfultz2/cget

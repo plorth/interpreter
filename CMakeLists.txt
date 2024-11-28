@@ -1,4 +1,4 @@
-CMAKE_MINIMUM_REQUIRED(VERSION 3.0)
+CMAKE_MINIMUM_REQUIRED(VERSION 3.11)
 
 PROJECT(
   Plorth
@@ -9,6 +9,34 @@ PROJECT(
 )
 
 INCLUDE(CMakePackageConfigHelpers)
+INCLUDE(FetchContent)
+
+FETCHCONTENT_DECLARE(
+  PlorthParser
+  GIT_REPOSITORY
+    https://github.com/plorth/parser.git
+  GIT_TAG
+    v2.3.0
+)
+FETCHCONTENT_DECLARE(
+  NlohmannJson
+  GIT_REPOSITORY
+    https://github.com/nlohmann/json.git
+  GIT_TAG
+    v3.11.2
+)
+# TODO: Remove this. It appears that the JSON library also contains this.
+FETCHCONTENT_DECLARE(
+  OrderedMap
+  GIT_REPOSITORY
+    https://github.com/tessil/ordered-map.git
+  GIT_TAG
+    v1.1.0
+)
+
+FETCHCONTENT_MAKEAVAILABLE(PlorthParser)
+FETCHCONTENT_MAKEAVAILABLE(NlohmannJson)
+FETCHCONTENT_MAKEAVAILABLE(OrderedMap)
 
 ADD_LIBRARY(
   plorth
@@ -59,7 +87,14 @@ TARGET_INCLUDE_DIRECTORIES(
   PUBLIC
     $<INSTALL_INTERFACE:include>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/cget/include>
+)
+
+TARGET_LINK_LIBRARIES(
+  plorth
+  PUBLIC
+    NlohmannJson
+    OrderedMap
+    PlorthParser
 )
 
 INSTALL(

@@ -1,3 +1,0 @@
-nlohmann/json@v3.11.2  -X header
-plorth/parser@v2.2.0 -X header
-Tessil/ordered-map@v1.1.0 -X header
