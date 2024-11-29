@@ -25,12 +25,12 @@
  */
 #pragma once
 
-#include <nlohmann/json.hpp>
+#include <peelo/json/value.hpp>
 #include <plorth/parser/position.hpp>
 
 namespace plorth
 {
-  using json = nlohmann::json;
+  using json = peelo::json::value::ptr;
 
   /**
    * Creates an JSON object from given source code position. The created object

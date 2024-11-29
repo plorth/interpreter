@@ -372,9 +372,13 @@ namespace plorth::value
   {
     if (is_int())
     {
-      return std::get<int_type>(m_container);
+      return std::make_shared<peelo::json::number>(
+        std::get<int_type>(m_container)
+      );
     } else {
-      return std::get<real_type>(m_container);
+      return std::make_shared<peelo::json::number>(
+        std::get<real_type>(m_container)
+      );
     }
   }
 

@@ -120,15 +120,14 @@ namespace plorth::value
   json
   object::to_json() const
   {
-    json result;
+    peelo::json::object::container_type properties;
 
     for (const auto& property : m_properties)
     {
-      result[peelo::unicode::encoding::utf8::encode(property.first)]
-        = property.second->to_json();
+      properties[property.first] = property.second->to_json();
     }
 
-    return result;
+    return std::make_shared<peelo::json::object>(properties);
   }
 
   std::u32string

@@ -79,19 +79,6 @@ namespace plorth::value
   }
 
   std::ostream&
-  operator<<(std::ostream& os, const base* value)
-  {
-    if (value)
-    {
-      os << peelo::unicode::encoding::utf8::encode(value->to_string());
-    } else {
-      os << "<no value>";
-    }
-
-    return os;
-  }
-
-  std::ostream&
   operator<<(std::ostream& os, const ref& value)
   {
     if (value)

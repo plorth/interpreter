@@ -128,7 +128,7 @@ namespace plorth::value
   json
   string::to_json() const
   {
-    return peelo::unicode::encoding::utf8::encode(m_value);
+    return std::make_shared<peelo::json::string>(m_value);
   }
 
   std::u32string

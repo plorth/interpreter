@@ -117,7 +117,7 @@ namespace plorth::value
     if (is_compiled())
     {
       const auto& values = std::get<std::vector<ref>>(m_container);
-      std::vector<json> result;
+      peelo::json::array::container_type result;
 
       result.reserve(values.size());
       for (const auto& value : values)
@@ -125,10 +125,10 @@ namespace plorth::value
         result.push_back(value->to_json());
       }
 
-      return result;
+      return std::make_shared<peelo::json::array>(result);
     }
 
-    return "native quote";
+    return std::make_shared<peelo::json::string>(U"native quote");
   }
 
   std::u32string

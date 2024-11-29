@@ -83,15 +83,15 @@ namespace plorth::value
   json
   symbol::to_json() const
   {
-    json result;
+    peelo::json::object::container_type result;
 
-    result["id"] = peelo::unicode::encoding::utf8::encode(m_id);
+    result[U"id"] = std::make_shared<peelo::json::string>(m_id);
     if (m_position)
     {
-      result["position"] = plorth::to_json(*m_position);
+      result[U"position"] = plorth::to_json(*m_position);
     }
 
-    return result;
+    return std::make_shared<peelo::json::object>(result);
   }
 
   std::u32string

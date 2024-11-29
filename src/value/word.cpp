@@ -60,13 +60,13 @@ namespace plorth::value
   json
   word::to_json() const
   {
-    std::vector<json> result;
+    peelo::json::array::container_type result;
 
     result.reserve(2);
-    result.push_back("->");
+    result.push_back(std::make_shared<peelo::json::string>(U"->"));
     result.push_back(m_symbol->to_json());
 
-    return result;
+    return std::make_shared<peelo::json::array>(result);
   }
 
   std::u32string

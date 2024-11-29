@@ -58,7 +58,7 @@ namespace plorth::value
   json
   boolean::to_json() const
   {
-    return m_value;
+    return std::make_shared<peelo::json::boolean>(m_value);
   }
 
   std::u32string

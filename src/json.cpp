@@ -32,21 +32,23 @@ namespace plorth
   json
   to_json(const parser::position& position)
   {
-    json result;
+    peelo::json::object::container_type result;
 
     if (!position.file.empty())
     {
-      result["file"] = peelo::unicode::encoding::utf8::encode(position.file);
+      result[U"file"] = std::make_shared<peelo::json::string>(position.file);
     }
     if (position.line > 0)
     {
-      result["line"] = position.line;
+      result[U"line"] = std::make_shared<peelo::json::number>(position.line);
     }
     if (position.column > 0)
     {
-      result["column"] = position.column;
+      result[U"column"] = std::make_shared<peelo::json::number>(
+        position.column
+      );
     }
 
-    return result;
+    return std::make_shared<peelo::json::object>(result);
   }
 }

@@ -12,31 +12,30 @@ INCLUDE(CMakePackageConfigHelpers)
 INCLUDE(FetchContent)
 
 FETCHCONTENT_DECLARE(
-  PlorthParser
-  GIT_REPOSITORY
-    https://github.com/plorth/parser.git
-  GIT_TAG
-    v2.3.0
-)
-FETCHCONTENT_DECLARE(
-  NlohmannJson
-  GIT_REPOSITORY
-    https://github.com/nlohmann/json.git
-  GIT_TAG
-    v3.11.2
-)
-# TODO: Remove this. It appears that the JSON library also contains this.
-FETCHCONTENT_DECLARE(
   OrderedMap
   GIT_REPOSITORY
     https://github.com/tessil/ordered-map.git
   GIT_TAG
     v1.1.0
 )
+FETCHCONTENT_DECLARE(
+  PeeloJson
+  GIT_REPOSITORY
+    https://github.com/peelonet/peelo-json.git
+  GIT_TAG
+    v0.1.0
+)
+FETCHCONTENT_DECLARE(
+  PlorthParser
+  GIT_REPOSITORY
+    https://github.com/plorth/parser.git
+  GIT_TAG
+    v2.3.0
+)
 
-FETCHCONTENT_MAKEAVAILABLE(PlorthParser)
-FETCHCONTENT_MAKEAVAILABLE(NlohmannJson)
 FETCHCONTENT_MAKEAVAILABLE(OrderedMap)
+FETCHCONTENT_MAKEAVAILABLE(PeeloJson)
+FETCHCONTENT_MAKEAVAILABLE(PlorthParser)
 
 ADD_LIBRARY(
   plorth
@@ -70,11 +69,19 @@ ADD_LIBRARY(
   src/value/word.cpp
 )
 
-TARGET_COMPILE_OPTIONS(
-  plorth
-  PRIVATE
-    -Wall -Werror
-)
+IF(MSVC)
+  TARGET_COMPILE_OPTIONS(
+    plorth
+    INTERFACE
+      /W4 /WX
+  )
+ELSE()
+  TARGET_COMPILE_OPTIONS(
+    plorth
+    INTERFACE
+      -Wall -Werror
+  )
+ENDIF()
 
 TARGET_COMPILE_FEATURES(
   plorth
@@ -87,13 +94,17 @@ TARGET_INCLUDE_DIRECTORIES(
   PUBLIC
     $<INSTALL_INTERFACE:include>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    # TODO: Figure out what's wrong with this.
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/build/_deps/orderedmap-src/include>
 )
 
 TARGET_LINK_LIBRARIES(
   plorth
   PUBLIC
-    NlohmannJson
-    OrderedMap
+    # TODO: Figure out what's wrong with this too.
+    # OrderedMap
+    PeeloJson
+    PeeloUnicode
     PlorthParser
 )
 

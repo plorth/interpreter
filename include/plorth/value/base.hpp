@@ -25,6 +25,7 @@
  */
 #pragma once
 
+#include <iostream>
 #include <memory>
 
 #include <plorth/json.hpp>
@@ -129,7 +130,6 @@ namespace plorth::value
   std::u32string to_string(enum type type);
 
   std::ostream& operator<<(std::ostream&, type);
-  std::ostream& operator<<(std::ostream&, const base*);
   std::ostream& operator<<(std::ostream&, const ref&);
 
   inline bool

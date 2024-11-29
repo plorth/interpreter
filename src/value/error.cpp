@@ -102,16 +102,19 @@ namespace plorth::value
   json
   error::to_json() const
   {
+    peelo::json::object::container_type properties;
     json result;
 
-    result["code"] = static_cast<int>(m_code);
-    result["message"] = peelo::unicode::encoding::utf8::encode(m_message);
+    properties[U"code"] = std::make_shared<peelo::json::number>(
+      static_cast<int>(m_code)
+    );
+    properties[U"message"] = std::make_shared<peelo::json::string>(m_message);
     if (m_position)
     {
-      result["position"] = plorth::to_json(*m_position);
+      properties[U"position"] = plorth::to_json(*m_position);
     }
 
-    return result;
+    return std::make_shared<peelo::json::object>(properties);
   }
 
   std::u32string

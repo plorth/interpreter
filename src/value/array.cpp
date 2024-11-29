@@ -77,15 +77,15 @@ namespace plorth::value
   json
   array::to_json() const
   {
-    std::vector<json> result;
+    peelo::json::array::container_type elements;
 
-    result.reserve(m_elements.size());
+    elements.reserve(m_elements.size());
     for (const auto& element : m_elements)
     {
-      result.push_back(element->to_json());
+      elements.push_back(element->to_json());
     }
 
-    return result;
+    return std::make_shared<peelo::json::array>(elements);
   }
 
   std::u32string
